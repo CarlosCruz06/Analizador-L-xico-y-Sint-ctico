@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Analizador Léxico y Sintáctico</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Analizador Léxico y Sintáctico</h1>
+    <form id="codeForm">
+        <textarea id="code" name="code" placeholder="Escribe tu código aquí..."></textarea><br>
+        <button type="button" onclick="analyzeCode()">Analizar</button>
+    </form>
+    <h2>Análisis Léxico:</h2>
+    <div id="lexicalErrors" style="color: red;"></div>
+    <table id="lexicalTable" border="1" style="display: none;">
+        <thead>
+            <tr>
+                <th>Línea</th>
+                <th>Token</th>
+                <th>Tipo</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <h2>Análisis Sintáctico:</h2>
+    <pre id="syntacticResult"></pre>
+    <script>
+        function analyzeCode() {
+            const code = document.getElementById('code').value;
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: code })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const lexicalErrorsDiv = document.getElementById('lexicalErrors');
+                const lexicalTable = document.getElementById('lexicalTable');
+                const lexicalTableBody = lexicalTable.getElementsByTagName('tbody')[0];
+                lexicalErrorsDiv.innerHTML = '';
+                lexicalTableBody.innerHTML = '';  // Clear previous results
+
+                if (data.lexical_errors) {
+                    lexicalErrorsDiv.innerHTML = data.lexical_errors.join('<br>');
+                    lexicalTable.style.display = 'none';
+                } else {
+                    lexicalTable.style.display = 'table';
+                    data.lexical_analysis.forEach(token => {
+                        const row = lexicalTableBody.insertRow();
+                        const cellLine = row.insertCell(0);
+                        const cellToken = row.insertCell(1);
+                        const cellType = row.insertCell(2);
+                        cellLine.textContent = token.line;
+                        cellToken.textContent = token.token;
+                        cellType.textContent = token.type;
+                    });
+                }
+                document.getElementById('syntacticResult').textContent = data.syntactic_analysis;
+            });
+        }
+    </script>
+</body>
+</html>
